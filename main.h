@@ -12,6 +12,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
+#include <thread>
 
 using namespace std;
 
@@ -26,6 +27,8 @@ cv::Mat _ori2;
 cv::Point centerBall[3];
 bool ball;
 char* COM = "COM4";
+string statusGame = "";
+sf::IpAddress ipServer = "172.16.0.103";
 
 bool writeres = false;
 int writelen = 0;
@@ -56,5 +59,5 @@ void cameraDepan();
 void cameraAtas();
 int getDirection();
 void perintahKeRobot(string aksinya);
-void sendToArduino(int writelen, bool writeres, Serial SP);
-void DataForCoach();
+void dapatkanPerintahWasit();
+void testThread();
