@@ -5,15 +5,9 @@ int main(int argc, char** argv) {
 	//Serial
 	Serial SP(COM);
 	char dataReceive4Robot[100];
-	char dataReceive4Game[100];
+
 	std::size_t received4Robot;
-	std::size_t received4Game;
 
-	sf::IpAddress ipServer = "172.16.0.103";
-
-	//socket for communication refreebox base and robot
-	sf::TcpSocket socketBaseRefree;
-	sf::Socket::Status statusRefree = socketBaseRefree.connect(ipServer, 11306);
 
 	//socket for communication processing base and robot
 	sf::TcpSocket socketRobot;
@@ -22,7 +16,9 @@ int main(int argc, char** argv) {
 	//cv::VideoCapture cap(0);
 	cv::VideoCapture caps(0);
 
-
+	//Multi-Thread
+	std::thread thread4Server;
+	thread4Server = std::thread(&dapatkanPerintahWasit);
 	//trackBars();
 
 	//if (!cap.isOpened())
@@ -30,13 +26,14 @@ int main(int argc, char** argv) {
 	if (!caps.isOpened())
 		return 0;
 
-	if (statusRobot == sf::Socket::Done && statusRefree == sf::Socket::Done) {
+	if (statusRobot == sf::Socket::Done) {
 		cout << "Server Connected" << endl;
 	}
 	if (SP.IsConnected()){
 		cout << "Arduino Connected" << endl;
 	}
-	
+
+
 	while (true) {
 		//cap >> _ori;
 		caps >> _ori2;
@@ -44,26 +41,13 @@ int main(int argc, char** argv) {
 		//cameraAtas();
 		cameraDepan();
 		
-		//Robot Terima dari Wasit/Refree
-		socketBaseRefree.receive(dataReceive4Game, 2, received4Game);
-
-		string statusPerintahGame = "";
-
-		for (int i = 0; i < received4Game; i++) {
-			//cout << dataReceive[i] << endl;
-			
-			statusPerintahGame += dataReceive4Game[i];
-			
-
-		}
-
 		//Robot Kirim data ke Pelatih
 		char* rad = intToChar(radiusCircle[1]);
 		socketRobot.send(rad, strlen(rad));
-
+		
 		//Robot Terima data dari Pelatih
-		socketRobot.receive(dataReceive4Robot, 3, received4Robot);
-
+		/*socketRobot.receive(dataReceive4Robot, 3, received4Robot);
+		
 		string aksinya = "";
 		 
 		for (int i = 0; i < received4Robot; i++) {
@@ -71,12 +55,10 @@ int main(int argc, char** argv) {
 			if (dataReceive4Robot[i] != '\n') {
 				aksinya += dataReceive4Robot[i];
 			}
-						
 		}
-		cout << statusPerintahGame << "," << aksinya << endl;
-	
-
-		perintahKeRobot(aksinya);
+		cout << aksinya << endl;
+	*/
+		perintahKeRobot(" ");
 		//toArduino
 		if (SP.IsConnected()) {
 
@@ -91,13 +73,49 @@ int main(int argc, char** argv) {
 		else if (!writeres) {
 			SP.ReConnect(COM);
 		}
-	
+		
+		statusGame = "";
+		
 		//cv::imshow("Camera Atas", _ori);
 		cv::imshow("Camera Depan", _ori2);
 		if (cv::waitKey(30) > 0) break;
 
 	}
 	return 0;
+}
+
+void testThread() {
+	while(true)cout << "Test Thread\n";
+}
+
+void dapatkanPerintahWasit() {
+
+	//socket for communication refreebox base and robot
+	sf::TcpSocket socketBaseRefree;
+	sf::Socket::Status statusRefree = socketBaseRefree.connect(ipServer, 11306);
+
+	char dataReceive4Game[100];
+	std::size_t received4Game;
+
+	if (statusRefree == sf::Socket::Done) {
+		cout << "\nWasit Connected" << endl;
+	}
+
+	while (true) {
+
+		//Robot Terima dari Wasit/Refree
+		socketBaseRefree.receive(dataReceive4Game, 2, received4Game);
+
+		string statusPerintahGame = "";
+
+		for (int i = 0; i < received4Game; i++) {
+			//cout << dataReceive[i] << endl;
+			statusPerintahGame += dataReceive4Game[i];
+		}
+
+		statusGame = statusPerintahGame;
+		cout << "\n" << statusGame << "\n";
+	}
 }
 
 void cameraAtas() {
