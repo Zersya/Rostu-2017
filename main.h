@@ -19,7 +19,7 @@ using namespace std;
 //variable
 int LOW[3];
 int HIGH[3];
-char* dir;
+char* dir = "";
 vector<vector<cv::Point>> contours;
 vector<cv::Vec4i> hierarchy;
 cv::Mat _ori;
@@ -28,6 +28,7 @@ cv::Point centerBall[3];
 bool ball;
 char* COM = "COM4";
 string statusGame = "";
+string lastState = "";
 sf::IpAddress ipServer = "172.16.0.103";
 
 bool writeres = false;
