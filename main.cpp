@@ -8,6 +8,9 @@ int main(int argc, char** argv) {
 
 	std::size_t received4Robot;
 
+	
+	char* State = "";
+	char* lastDir = "";
 
 	//socket for communication processing base and robot
 	sf::TcpSocket socketRobot;
@@ -33,6 +36,8 @@ int main(int argc, char** argv) {
 		cout << "Arduino Connected" << endl;
 	}
 
+	string aksinyaBuff = "";
+	string aksinya = "";
 
 	while (true) {
 		//cap >> _ori;
@@ -46,35 +51,36 @@ int main(int argc, char** argv) {
 		socketRobot.send(rad, strlen(rad));
 		
 		//Robot Terima data dari Pelatih
-		/*socketRobot.receive(dataReceive4Robot, 3, received4Robot);
+		socketRobot.receive(dataReceive4Robot, 3, received4Robot);
 		
-		string aksinya = "";
 		 
 		for (int i = 0; i < received4Robot; i++) {
 			//cout << dataReceive[i] << endl;
 			if (dataReceive4Robot[i] != '\n') {
-				aksinya += dataReceive4Robot[i];
+				aksinyaBuff += dataReceive4Robot[i];
+			}
+			else {
+				aksinya = aksinyaBuff;
+				cout << aksinya << endl;
+				aksinyaBuff = "";
 			}
 		}
-		cout << aksinya << endl;
-	*/
-		perintahKeRobot(" ");
+	
+		perintahKeRobot(aksinya);
 		//toArduino
 		if (SP.IsConnected()) {
-
 			writelen = strlen(dir);
 			writeres = SP.WriteData(dir, writelen);
+			//cout << lastDir << " , " << dir << endl;
 			//readres = SP.ReadData(incomingData, datalen);
 			//printf("%s", incomingData);
 			//cout << dir << endl;
-
+			
 			delete[] dir;
 		}
 		else if (!writeres) {
 			SP.ReConnect(COM);
 		}
-		
-		statusGame = "";
 		
 		//cv::imshow("Camera Atas", _ori);
 		cv::imshow("Camera Depan", _ori2);
@@ -110,11 +116,13 @@ void dapatkanPerintahWasit() {
 
 		for (int i = 0; i < received4Game; i++) {
 			//cout << dataReceive[i] << endl;
-			statusPerintahGame += dataReceive4Game[i];
+			
+			statusPerintahGame = dataReceive4Game[i];
 		}
 
 		statusGame = statusPerintahGame;
-		cout << "\n" << statusGame << "\n";
+		//lastState = statusGame;
+		cout << statusGame;
 	}
 }
 
@@ -144,20 +152,23 @@ void cameraDepan() {
 }
 
 void perintahKeRobot(string aksinya){
-	
-	
-		if (centerBall[1].x < 500 && centerBall[1].x > 150) {
+
+	if (statusGame == "s") {
+		if (aksinya == "RM") {
 			getData(1);
 		}
-		else if (centerBall[1].x < 650 && centerBall[1].x > 500) {
-			getData(3);
-		}
-		else if (centerBall[1].x < 500 && centerBall[1].x > 1) {
-			getData(4);
+		else if (aksinya == "RJ") {
+			getData(2);
 		}
 		else
 			getData(0);
-	
+	}
+	else if(statusGame == "S"){
+		getData(0);
+	}
+	else {
+		getData(0);
+	}
 }
 
 void circleRoi() {
