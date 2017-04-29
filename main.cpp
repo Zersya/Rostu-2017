@@ -47,7 +47,8 @@ int main(int argc, char** argv) {
 		cameraDepan();
 		
 		//Robot Kirim data ke Pelatih
-		char* rad = intToChar(radiusCircle[1]);
+		//char* rad = intToChar(radiusCircle[1]);
+		char* rad = intToChar(centerBall[1].x/3.5);
 		socketRobot.send(rad, strlen(rad));
 		
 		//Robot Terima data dari Pelatih
@@ -61,7 +62,7 @@ int main(int argc, char** argv) {
 			}
 			else {
 				aksinya = aksinyaBuff;
-				cout << aksinya << endl;
+				//cout << aksinya << endl;
 				aksinyaBuff = "";
 			}
 		}
@@ -82,6 +83,8 @@ int main(int argc, char** argv) {
 			SP.ReConnect(COM);
 		}
 		
+		cout << centerBall[1].x/3.5 << endl;
+
 		//cv::imshow("Camera Atas", _ori);
 		cv::imshow("Camera Depan", _ori2);
 		if (cv::waitKey(30) > 0) break;
@@ -155,16 +158,16 @@ void perintahKeRobot(string aksinya){
 
 	if (statusGame == "s") {
 		if (aksinya == "RM") {
-			getData(1);
+			getData(centerBall[1].x/3.5);
 		}
 		else if (aksinya == "RJ") {
-			getData(2);
+			getData(centerBall[1].x/3.5);
 		}
 		else
-			getData(0);
+			getData(90);
 	}
 	else if(statusGame == "S"){
-		getData(0);
+		getData(90);
 	}
 	else {
 		getData(0);
@@ -279,7 +282,7 @@ char* intToChar(int data) {
 
 void getData(int prt) {
 	string data = to_string(prt);
-	//data += "\n";
+	data += "\n";
 
 	dir = new char[data.length()];
 	std::strcpy(dir, data.c_str());
