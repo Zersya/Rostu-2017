@@ -29,7 +29,7 @@ bool ball;
 char* COM = "COM4";
 string statusGame = "";
 string lastState = "";
-sf::IpAddress ipServer = "172.16.0.103";
+sf::IpAddress ipServer = "172.16.0.101";
 
 bool writeres = false;
 int writelen = 0;
