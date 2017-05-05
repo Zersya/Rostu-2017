@@ -8,6 +8,7 @@
 #include "SFML\Network.hpp"
 
 #include "SerialClass.h"
+#include "PidController.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -20,22 +21,28 @@ using namespace std;
 int LOW[3];
 int HIGH[3];
 char* dir = "";
+string _dataNano = "";
 vector<vector<cv::Point>> contours;
 vector<cv::Vec4i> hierarchy;
 cv::Mat _ori;
 cv::Mat _ori2;
 cv::Point centerBall[3];
 bool ball;
-char* COM = "COM4";
+char* COMmega = "COM7";
+char* COMnano = "COM4";
 string statusGame = "";
 string lastState = "";
 sf::IpAddress ipServer = "172.16.0.101";
+PidControllerRotation pidRotation;
+PidControllerDestionation pidDestination;
 
 bool writeres = false;
 int writelen = 0;
 const double PI = 3.14;
 int radiusCircle[2] = { 0, 0 };
 int locBola[2] = { 0,0 };
+int kondisi = 0;
+float heading = 0;
 
 
 //function
@@ -54,7 +61,7 @@ void erodeDilate(cv::Mat _pros);
 int processFindContour(cv::Mat _ths, int id);
 void drawing(int largeI, int id);
 void circleRoi();
-void getData(int angle);
+void getData(int rot, int dest, int kondisi);
 char* intToChar(int data);
 void cameraDepan();
 void cameraAtas();
@@ -62,3 +69,4 @@ int getDirection();
 void perintahKeRobot(string aksinya);
 void dapatkanPerintahWasit();
 void testThread();
+void getDataHeading();
