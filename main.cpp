@@ -1,11 +1,11 @@
 #include "main.h"
 
-int main(int argc, char** argv) {
-	
-	//Serial
-	Serial SP(COM);
-	char dataReceive4Robot[100];
 
+int main(int argc, char** argv) {
+
+	//Serial
+	Serial SP(COMmega);
+	char dataReceive4Robot[100];
 	std::size_t received4Robot;
 
 	
@@ -13,15 +13,18 @@ int main(int argc, char** argv) {
 	char* lastDir = "";
 
 	//socket for communication processing base and robot
-	sf::TcpSocket socketRobot;
-	sf::Socket::Status statusRobot = socketRobot.connect(ipServer, 444);
+	//sf::TcpSocket socketRobot;
+	//sf::Socket::Status statusRobot = socketRobot.connect(ipServer, 444);
 	
 	//cv::VideoCapture cap(0);
 	cv::VideoCapture caps(0);
 
 	//Multi-Thread
-	std::thread thread4Server;
-	thread4Server = std::thread(&dapatkanPerintahWasit);
+	//std::thread thread4Server;
+	//thread4Server = std::thread(&dapatkanPerintahWasit);
+	std::thread thread4Compass;
+	thread4Compass = std::thread(&getDataHeading);
+
 	//trackBars();
 
 	//if (!cap.isOpened())
@@ -29,33 +32,31 @@ int main(int argc, char** argv) {
 	if (!caps.isOpened())
 		return 0;
 
-	if (statusRobot == sf::Socket::Done) {
+	/*if (statusRobot == sf::Socket::Done) {
 		cout << "Server Connected" << endl;
-	}
+	}*/
 	if (SP.IsConnected()){
-		cout << "Arduino Connected" << endl;
+		cout << "Arduino Mega Connected" << endl;
 	}
-
 	string aksinyaBuff = "";
 	string aksinya = "";
 
 	while (true) {
 		//cap >> _ori;
 		caps >> _ori2;
-
 		//cameraAtas();
 		cameraDepan();
-		
+		cout << radiusCircle[1] << endl;
 		//Robot Kirim data ke Pelatih
 		//char* rad = intToChar(radiusCircle[1]);
 		char* rad = intToChar(centerBall[1].x/3.5);
-		socketRobot.send(rad, strlen(rad));
+		//socketRobot.send(rad, strlen(rad));
 		
 		//Robot Terima data dari Pelatih
-		socketRobot.receive(dataReceive4Robot, 3, received4Robot);
+		//socketRobot.receive(dataReceive4Robot, 3, received4Robot);
 		
 		 
-		for (int i = 0; i < received4Robot; i++) {
+		/*for (int i = 0; i < received4Robot; i++) {
 			//cout << dataReceive[i] << endl;
 			if (dataReceive4Robot[i] != '\n') {
 				aksinyaBuff += dataReceive4Robot[i];
@@ -65,27 +66,26 @@ int main(int argc, char** argv) {
 				//cout << aksinya << endl;
 				aksinyaBuff = "";
 			}
-		}
+		}*/
 	
 		perintahKeRobot(aksinya);
 		//toArduino
+		writeres = false;
 		if (SP.IsConnected()) {
 			writelen = strlen(dir);
 			writeres = SP.WriteData(dir, writelen);
-			//cout << lastDir << " , " << dir << endl;
-			//readres = SP.ReadData(incomingData, datalen);
-			//printf("%s", incomingData);
-			//cout << dir << endl;
+
+			//cout << dir;
 			
 			delete[] dir;
 		}
-		else if (!writeres) {
-			SP.ReConnect(COM);
+		if (!writeres) {
+			SP.ReConnect(COMmega);
 		}
 		
-		cout << centerBall[1].x/3.5 << endl;
 
 		//cv::imshow("Camera Atas", _ori);
+		
 		cv::imshow("Camera Depan", _ori2);
 		if (cv::waitKey(30) > 0) break;
 
@@ -95,6 +95,26 @@ int main(int argc, char** argv) {
 
 void testThread() {
 	while(true)cout << "Test Thread\n";
+}
+void getDataHeading() {
+	Serial SP(COMnano);
+	char read[50] = "";
+
+	if (SP.IsConnected()) {
+		cout << "Arduino Nano Connected" << endl;
+	}
+
+	while (true) {
+		if (SP.IsConnected()) {
+			int len = SP.ReadData(read, 100);
+			_dataNano += read;
+			read[len] = 0;
+			Sleep(200);
+		}
+		cout << _dataNano << endl;
+
+		_dataNano = "";
+	}
 }
 
 void dapatkanPerintahWasit() {
@@ -129,6 +149,67 @@ void dapatkanPerintahWasit() {
 	}
 }
 
+void perintahKeRobot(string aksinya) {
+
+	if(!ball && kondisi == 0){
+		getData(0, 0, 0);
+	}
+	else {
+		double pwm;
+
+		//directional controller
+		double pwmRotation = pidRotation._pidControllerRotation(centerBall[1].x / 3.5);
+
+		if (pidRotation.rawOutput > 0 && !ball) kondisi = -2;
+		else if (pidRotation.rawOutput < 0 && !ball) kondisi = 2;
+		else if (pidRotation.rawOutput > 0) kondisi = 1;
+		else if (pidRotation.rawOutput < 0) kondisi = -1;
+
+		double pwmDestination = pidDestination._pidControlleDestination(radiusCircle[1]);
+
+		getData(pwmRotation, pwmDestination, kondisi);
+	}
+	//cout << pidDestination.rawOutput / 3.5 << ",";
+	
+	/*if (statusGame == "s") {
+		if (aksinya == "RM") {
+			
+		}
+		else if (aksinya == "RJ") {
+			getData(centerBall[1].x / 3.5);
+		}
+		else
+			getData(90);
+	}
+	else if (statusGame == "S") {
+		getData(90);
+	}
+	else {
+		getData(0);
+	}*/
+}
+
+char* intToChar(int data) {
+	string dataStr = to_string(data);
+	char* rad = new char[dataStr.length() + 1];
+
+	std::strcpy(rad, dataStr.c_str());
+
+	return rad;
+
+}
+
+void getData(int rot, int dest, int kondisi) {
+	string data = to_string(rot);
+	data += "," + to_string(dest);
+	data += "," + to_string(kondisi);
+	data += "\n";
+
+	dir = new char[data.length()+2];
+	std::strcpy(dir, data.c_str());
+}
+
+
 void cameraAtas() {
 	//bola
 	locBola[0] = processFindContour(processThreshold(_ori, inisiateScalarLowBola(), inisiateScalarHighBola()), 1);
@@ -154,25 +235,6 @@ void cameraDepan() {
 	//cout << centerBall[1];
 }
 
-void perintahKeRobot(string aksinya){
-
-	if (statusGame == "s") {
-		if (aksinya == "RM") {
-			getData(centerBall[1].x/3.5);
-		}
-		else if (aksinya == "RJ") {
-			getData(centerBall[1].x/3.5);
-		}
-		else
-			getData(90);
-	}
-	else if(statusGame == "S"){
-		getData(90);
-	}
-	else {
-		getData(0);
-	}
-}
 
 void circleRoi() {
 	int radius = 235;
@@ -196,6 +258,10 @@ cv::Mat processThreshold(cv::Mat _pros, cv::Scalar low, cv::Scalar high) {
 	cv::inRange(_pros, low, high, _pros);
 	erodeDilate(_pros);
 
+	cv::medianBlur(_pros, _pros, 25);
+	cv::GaussianBlur(_pros, _pros, cv::Size(9, 9), 1, 2);
+
+	cv::imshow("Camera", _pros);
 	return _pros;
 }
 
@@ -205,7 +271,7 @@ int processFindContour(cv::Mat _ths, int id) {
 
 	//get more resource
 	//_ths.copyTo(tmp);
-
+	
 	cv::findContours(_ths, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 	
 	int largestContourIndex, largestArea = 0;
@@ -218,6 +284,7 @@ int processFindContour(cv::Mat _ths, int id) {
 			if (a > largestArea) {
 				largestArea = (int) a;
 				largestContourIndex = i;
+
 			}
 
 		}
@@ -239,9 +306,9 @@ int processFindContour(cv::Mat _ths, int id) {
 	}
 	else {
 		ball = false;
-		if(id == 2)
-			centerBall[1] = cv::Point(0, 0);
-		return 0;
+		//if(id == 2)
+			//centerBall[1] = cv::Point(0, 0);
+		//return 0;
 
 	}
 	
@@ -266,27 +333,10 @@ int getDirection() {
 
 		return rotAngle;
 	}
-	else
-		return 0;
+	/*else
+		return 0;*/
 }
 
-char* intToChar(int data) {
-	string dataStr = to_string(data);
-	char* rad = new char[dataStr.length() + 1];
-
-	std::strcpy(rad, dataStr.c_str());
-
-	return rad;
-
-}
-
-void getData(int prt) {
-	string data = to_string(prt);
-	data += "\n";
-
-	dir = new char[data.length()];
-	std::strcpy(dir, data.c_str());
-}
 
 void drawing(int largeI, int id) {
 
@@ -362,13 +412,14 @@ void updateData(int, void*) {
 }
 
 cv::Scalar inisiateScalarLowBola() {
-	cv::Scalar LOWBola = cv::Scalar(0,0,210);
-	
+	//cv::Scalar LOWBola = cv::Scalar(LOW[0], LOW[1], LOW[2]);
+	cv::Scalar LOWBola = cv::Scalar(0, 0, 184);
 	return LOWBola;
 }
 cv::Scalar inisiateScalarHighBola() {
 
-	cv::Scalar HIGHBola = cv::Scalar(117, 205, 256);
+	cv::Scalar HIGHBola = cv::Scalar(180, 192, 256);
+	//cv::Scalar HIGHBola = cv::Scalar(HIGH[0], HIGH[1], HIGH[2]);
 	
 	return HIGHBola;
 }
