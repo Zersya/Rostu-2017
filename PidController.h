@@ -7,13 +7,13 @@ public:
 
 private:
 	double kp = 4;
-	double kd =  2;
-	double limits = 4;
+	double kd = 2;
+	double limits = 1;
 
 	double setPoint = 90;
 	double lastError = 0;
 
-	double maxValue = 100;
+	double maxValue = 150;
 
 
 };
@@ -22,10 +22,24 @@ class PidControllerDestionation {
 public:
 	double _pidControlleDestination(double input);
 	double rawOutput;
-	double setPoint = 200;
+	double setPoint = 225;
 private:
 	double kp = 4;
-	double kd = 6;
+	double kd = 7.2;
+	double limits = 2;
+
+	double lastError = 0;
+
+	double maxValue = 100;
+};
+
+class PidControllerArahGawang {
+public:
+	double _pidControllerArahGawang(int input);
+	double setPoint = 50;
+private:
+	double kp = .7;
+	double kd = .5;
 	double limits = 2;
 
 	double lastError = 0;
@@ -33,16 +47,19 @@ private:
 	double maxValue = 150;
 };
 
-class PidControllerArahGawang {
+class PidControllerOmniCamera {
 public:
-	double _pidControllerArahGawang(double input);
-	double setPoint = 200;
+	double _pidControllerOmniCamera(double input);
+	double rawOutput;
+	double setPoint = 260;
 private:
-	double kp = 4;
-	double kd = 6;
-	double limits = 2;
+	double kp = 1 .8;
+	double ki = 1;
+	double kd = .55;
+
+	double limits = 1;
 
 	double lastError = 0;
 
-	double maxValue = 80;
+	double maxValue = 200;
 };
