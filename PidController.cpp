@@ -1,48 +1,98 @@
-#pragma once
+#include "PidController.h"
+#include <iostream>
 
-class PidControllerRotation {
-public:
-	double _pidControllerRotation(double input);
-	double rawOutput;
+double PidControllerRotation::_pidControllerRotation(double input) {
+	double error;
+	if (input < 0) error = setPoint + input;
+	else error = setPoint - input;
 
-private:
-	double kp = 4;
-	double kd =  2;
-	double limits = 4;
+	double rate = input - lastError;
+	double output = ((kp * error) + (kd * rate)) / limits;
 
-	double setPoint = 90;
-	double lastError = 0;
+	lastError = input;
+	rawOutput = output;
+	if (output > 0) {
+		if (output > maxValue) {
+			output = maxValue;
+		}
+	}
+	else if (output < 0) {
+		output *= -1;
+		if (output > maxValue) {
+			output = maxValue;
+		}
 
-	double maxValue = 100;
+	}
+	//std::cout << output << std::endl;
+	return output;
+}
 
+double PidControllerDestionation::_pidControlleDestination(double input) {
+	double error;
+	if (input < 0) error = setPoint + input;
+	else error = setPoint - input;
 
-};
+	double rate = input - lastError;
+	double output = ((kp * error) + (kd * rate)) / limits;
 
-class PidControllerDestionation {
-public:
-	double _pidControlleDestination(double input);
-	double rawOutput;
-	double setPoint = 200;
-private:
-	double kp = 4;
-	double kd = 6;
-	double limits = 2;
+	lastError = input;
+	rawOutput = output;
+	if (output > 0) {
+		if (output > maxValue) {
+			output = maxValue;
+		}
+	}
+	else if (output < 0) {
+		output *= -1;
+		if (output > maxValue) {
+			output = maxValue;
+		}
 
-	double lastError = 0;
+	}
+	return output;	
+}
+double PidControllerArahGawang::_pidControllerArahGawang(int input) {
+	double error;
+	if (input < 0) error = setPoint + input;
+	else error = setPoint - input;
 
-	double maxValue = 150;
-};
+	double rate = input - lastError;
+	double output = ((kp * error) + (kd * rate)) / limits;
+	lastError = input;
+	if (output > 0) {
+		if (output > maxValue) {
+			output = maxValue;
+		}
+	}
+	else if (output < 0) {
+		output *= -1;
+		if (output > maxValue) {
+			output = maxValue;
+		}
 
-class PidControllerArahGawang {
-public:
-	double _pidControllerArahGawang(double input);
-	double setPoint = 200;
-private:
-	double kp = 4;
-	double kd = 6;
-	double limits = 2;
+	}
+	return output;
+}
+double PidControllerOmniCamera::_pidControllerOmniCamera(double input) {
+	double error;
+	if (input < 0) error = setPoint + input;
+	else error = setPoint - input;
 
-	double lastError = 0;
+	double rate = input - lastError;
+	double output = ((kp * error) + (kd * rate));
+	lastError = input;
+	rawOutput = output;
+	if (output > 0) {
+		if (output > maxValue) {
+			output = maxValue;
+		}
+	}
+	else if (output < 0) {
+		output *= -1;
+		if (output > maxValue) {
+			output = maxValue;
+		}
 
-	double maxValue = 80;
-};
+	}
+	return output;
+}
