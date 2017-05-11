@@ -53,7 +53,7 @@ public:
 	double rawOutput;
 	double setPoint = 260;
 private:
-	double kp = 1 .8;
+	double kp = 1.8;
 	double ki = 1;
 	double kd = .55;
 
