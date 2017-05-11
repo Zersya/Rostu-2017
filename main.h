@@ -36,7 +36,7 @@ char* COMmega = "COM7";
 char* COMnano = "COM5";
 string statusGame = "";
 string lastState = "";
-sf::IpAddress ipServer = "172.16.0.100";
+sf::IpAddress ipServer = "172.16.0.104";
 PidControllerRotation pidRotation;
 PidControllerDestionation pidDestination;
 PidControllerArahGawang pidArahGawang;
@@ -77,8 +77,8 @@ vector<int> H_ROI, S_ROI, V_ROI;// HSV values from the click/drag ROI region sto
 
 
 //function
-void kejarBola();
-void kondisiMotor();
+void kejarBola(int kondisiCamera);
+void kondisiMotor(int kondisiKamera);
 cv::Mat processThreshold(cv::Mat _pros, cv::Scalar low, cv::Scalar high);
 void trackBars();
 void updateData(int, void*);
