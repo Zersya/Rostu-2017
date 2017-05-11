@@ -13,9 +13,16 @@ int main(int argc, char** argv) {
 	char* lastDir = "";
 
 	//socket for communication processing base and robot
-	//sf::TcpSocket socketRobot;
-	//sf::Socket::Status statusRobot = socketRobot.connect(ipServer, 444);
+	sf::TcpSocket socketRobot;
+	sf::Socket::Status statusRobot = socketRobot.connect(ipServer, 444);
 	
+	//Multi-Thread
+	std::thread thread4Server;
+	thread4Server = std::thread(&dapatkanPerintahWasit);
+	//std::thread thread4Compass;
+	//thread4Compass = std::thread(&getDataHeading);
+
+
 	cv::VideoCapture cap(1);
 	cv::VideoCapture caps(0);
 	//initiate mouse move and drag to false 
@@ -37,22 +44,17 @@ int main(int argc, char** argv) {
 	cv::namedWindow("Camera Depan");
 	cv::setMouseCallback("Camera Depan", clickAndDrag_Rectangle, &_ori2);
 
-	//Multi-Thread
-	//std::thread thread4Server;
-	//thread4Server = std::thread(&dapatkanPerintahWasit);
-	//std::thread thread4Compass;
-	//thread4Compass = std::thread(&getDataHeading);
-
-	trackBars();
+	
+	//trackBars();
 
 	if (!cap.isOpened())
 		return 0;
 	if (!caps.isOpened())
 		return 0;
 
-	//if (statusRobot == sf::Socket::Done) {
-	//	cout << "Server Connected" << endl;
-	//}
+	if (statusRobot == sf::Socket::Done) {
+		cout << "Server Connected" << endl;
+	}
 	if (SP.IsConnected()){
 		cout << "Arduino Mega Connected" << endl;
 	}
@@ -64,7 +66,6 @@ int main(int argc, char** argv) {
 	while (true) {
 		cap >> _ori;
 		caps >> _ori2;
-		cameraAtas();
 		
 		//set HSV values from user selected region
 		recordHSV_Values(_ori, _ori);
@@ -84,12 +85,12 @@ int main(int argc, char** argv) {
 		dataKirimServer = new char[konversi.length()+2];
 		std::strcpy(dataKirimServer, konversi.c_str());
 
-		//socketRobot.send(dataKirimServer, strlen(dataKirimServer));
+		socketRobot.send(dataKirimServer, strlen(dataKirimServer));
 		
 		//Robot Terima data dari Pelatih
-		//socketRobot.receive(dataReceive4Robot, 8, received4Robot);
+		socketRobot.receive(dataReceive4Robot, 8, received4Robot);
 
-		/*int k = 0;
+		int k = 0;
 		dataReceivefromCoach[k] = "";
 		for (int i = 0; i < received4Robot; i++) {
 			if (dataReceive4Robot[i] != '\n') {
@@ -105,7 +106,7 @@ int main(int argc, char** argv) {
 				aksinya = dataReceivefromCoach[0];
 				aksinya += "," + dataReceivefromCoach[1];
 			}
-		}*/
+		}
 		//cout << aksinya << endl;
 		//pidAG.setPoint = stoi(dataReceivefromCoach[0]);
 	
@@ -115,7 +116,7 @@ int main(int argc, char** argv) {
 		if (SP.IsConnected()) {
 			writelen = strlen(dir);
 			writeres = SP.WriteData(dir, writelen);
-			cout << kondisi << "," << pidJarakBola << "," << dataHeading << "," << dir;
+			//cout << kondisi << "," << pidJarakBola << "," << dataHeading << "," << dir;
 			delete[] dir;
 		}
 	//	cout << kondisi <<  "," << dir;
@@ -129,8 +130,8 @@ int main(int argc, char** argv) {
 		
 		cv::imshow("Camera Atas", _ori);
 		cv::imshow("Camera Depan", _ori2);
-		if (cv::waitKey(30) == 99) calibrationMode != calibrationMode;
-		else if (cv::waitKey(30) > 0) break;
+		//if (cv::waitKey(30) == 99) calibrationMode != calibrationMode;
+		 if (cv::waitKey(30) > 0) break;
 
 	}
  	return 0;
@@ -140,7 +141,7 @@ void testThread() {
 	while(true)cout << "Test Thread\n";
 }
 
-void getDataHeading() {
+void getDataHeading() {	
 	Serial SP(COMnano);
 	char read[50] = "";
 	string _dataNano = "";
@@ -198,26 +199,33 @@ void dapatkanPerintahWasit() {
 }
 
 void perintahKeRobot(string aksinya) {
-	kejarBola();
+	//kejarBola();
 	//kondisiMotor();
 
 
-	/*if (statusGame == "s") {
+	if (statusGame == "s") {
+		//kejarBola();
+		cameraAtas();
+		cout << "Start" << endl;
 		if (aksinya == "RM") {
 			
 		}
 		else if (aksinya == "RJ") {
-			getData(centerBall[1].x / 3.5);
+	
 		}
-		else
-			getData(90);
+	
 	}
 	else if (statusGame == "S") {
-		getData(90);
+		cout << "Stop" << endl;
+		getData(0, 0, 0, 0, 2, 2, 2, 2);
+	}
+	else if (statusGame == "k" || statusGame == "K") {
+		cout << "Kick off" << endl;
+		cameraDepan();
 	}
 	else {
-		getData(0);
-	}*/
+		getData(0, 0, 0, 0, 0, 0, 0, 0);
+	}
 }
 
 float euclideanDist(cv::Point p, cv::Point q) {
@@ -225,68 +233,85 @@ float euclideanDist(cv::Point p, cv::Point q) {
 	return cv::sqrt(diff.x*diff.x + diff.y*diff.y);
 }
 int tempLocBola = 0;
-void kejarBola() {
-	d = euclideanDist(cv::Point(_ori.rows / 2, _ori.cols / 2), cv::Point(centerBall[0].x, centerBall[0].y));
-	if (locBola[0] <= 0) {
-		locBola[0] = tempLocBola;
-	}
-	pidJarakBola = pidDestination._pidControlleDestination(d);
-	//pidArahBola = pidRotation._pidControllerRotation(centerBall[1].x / 3.5);
-	pidNgarahGawang = pidArahGawang._pidControllerArahGawang(dataHeading);
-	pidOmniCamera = pidOmniView._pidControllerOmniCamera(locBola[0]);
-	
-	int motor = (pidJarakBola + pidOmniCamera);
-	//cout << d << endl;
-	kondisiMotor();
-	
-	if (ball) {
-		tempLocBola = locBola[0];
-		if (kondisi == 1 || kondisi == -1) {
-			if (kondisi == 1) {
-				getData(motor / 3, pidJarakBola, pidJarakBola, motor, 1, 1, 1, 1);
-			}
-			else if (kondisi == -1) {
-				getData(motor, pidJarakBola, pidJarakBola, motor / 3, 1, 1, 1, 1);
-			}
+void kejarBola(int kondisiKamera) {
+	kondisiMotor(kondisiKamera);
+	if (kondisiKamera == 1) {
+		d = euclideanDist(cv::Point(_ori.rows / 2, _ori.cols / 2), cv::Point(centerBall[0].x, centerBall[0].y));
+		if (locBola[0] <= 0) {
+			locBola[0] = tempLocBola;
 		}
-		else if (kondisi == 2 || kondisi == -2) {
-			if (kondisi == 2) {
-				getData(pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, 1, 1, 0, 0);
+		pidJarakBola = pidDestination._pidControlleDestination(d);
+		pidNgarahGawang = pidArahGawang._pidControllerArahGawang(dataHeading);
+		pidOmniCamera = pidOmniView._pidControllerOmniCamera(locBola[0]);
+
+		int motor = (pidJarakBola + pidOmniCamera);
+		//cout << d << endl;
+		
+
+		if (ball) {
+			tempLocBola = locBola[0];
+			if (kondisi == 1 || kondisi == -1) {
+				if (kondisi == 1) {
+					getData(motor / 3, pidJarakBola, pidJarakBola, motor, 1, 1, 1, 1);
+				}
+				else if (kondisi == -1) {
+					getData(motor, pidJarakBola, pidJarakBola, motor / 3, 1, 1, 1, 1);
+				}
 			}
-			else if (kondisi == -2) {
-				getData(pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, 0, 0, 1, 1);
+			else if (kondisi == 2 || kondisi == -2) {
+				if (kondisi == 2) {
+					getData(pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, 1, 1, 0, 0);
+				}
+				else if (kondisi == -2) {
+					getData(pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, pidOmniCamera / 3, 0, 0, 1, 1);
+				}
 			}
-		}
-		else if (kondisi == 3 || kondisi == -3) {
-			if (kondisi == -3) {
-				getData(pidNgarahGawang / 2, pidNgarahGawang / 2, pidNgarahGawang, pidNgarahGawang, 1, 0, 1, 1);
+			else if (kondisi == 3 || kondisi == -3) {
+				if (kondisi == -3) {
+					getData(pidNgarahGawang / 2, pidNgarahGawang / 2, pidNgarahGawang, pidNgarahGawang, 1, 0, 1, 1);
+				}
+				else if (kondisi == 3) {
+					getData(pidNgarahGawang, pidNgarahGawang, pidNgarahGawang / 2, pidNgarahGawang / 2, 1, 1, 0, 1);
+				}
 			}
-			else if (kondisi == 3) {
-				getData(pidNgarahGawang, pidNgarahGawang, pidNgarahGawang / 2, pidNgarahGawang / 2, 1, 1, 0, 1);
+			else {
+				getData(0, 0, 0, 0, 0, 0, 0, 0);
 			}
 		}
 		else {
 			getData(0, 0, 0, 0, 0, 0, 0, 0);
+			/*	ball = false;
+				_ball = true;
+				if (kondisi == 1 || kondisi == -1) {
+					if (kondisi == 1) {
+						getData(motor / 4, pidJarakBola, pidJarakBola, motor, 1, 1, 1, 1);
+					}
+					else if (kondisi == -1) {
+						getData(motor, pidJarakBola, pidJarakBola, motor / 4, 1, 1, 1, 1);
+					}
+				}
+				*/
 		}
 	}
-	else {
-		ball = false;
-		_ball = true;
-		if (kondisi == 1 || kondisi == -1) {
-			if (kondisi == 1) {
-				getData(motor / 4, pidJarakBola, pidJarakBola, motor, 1, 1, 1, 1);
-			}
-			else if (kondisi == -1) {
-				getData(motor, pidJarakBola, pidJarakBola, motor / 4, 1, 1, 1, 1);
-			}
-		}
-		cameraDepan();
-		getData(50, 50, 50/2, 50/2, 1, 1, 0, 0);
+	else if (kondisiKamera == 2) {
+		pidDestination.setPoint = 30;
+		pidArahBola = pidRotation._pidControllerRotation(centerBall[1].x / 3.5);
+		pidJarakBola = pidDestination._pidControlleDestination(radiusCircle[1]);
+		
 
+		if (kondisi == -1) {
+			getData(pidArahBola/3, pidJarakBola, pidJarakBola, pidArahBola, 1, 1, 1, 1);
+		}
+		else if (kondisi == 1) {
+			getData(pidArahBola, pidJarakBola, pidJarakBola, pidArahBola/3, 1, 1, 1, 1);
+		}
+		else getData(0, 0, 0, 0, 0, 0, 0, 0);
+
+		
 	}
 }
 
-void kondisiMotor() {
+void kondisiMotor(int kondisiKamera) {
 	/*
 		kondisi
 		1 = arahKiri
@@ -296,17 +321,32 @@ void kondisiMotor() {
 		3 = arahGawangTerdekatKanan
 		-3 = arahgawangTerdekatKiri
 	*/
-	if (!ball && kondisi == 0) getData(0,0,0,0,0,0,0,0);
-	else {
-		if (pidOmniView.rawOutput < 0 && locBola[0] > 310 && ball) kondisi = -2;
-		else if (pidOmniView.rawOutput > 0 && locBola[0] < 190 && ball) kondisi = 2;
-		else if (pidOmniView.rawOutput < 0 && locBola[0] > 260 && locBola[0] < 310 && ball) kondisi = 1;
-		else if (pidOmniView.rawOutput > 0 && locBola[0] > 190 && locBola[0] < 260 && ball) kondisi = -1;
+	if (kondisiKamera == 1) {
+		cout << "Kamera atas aktifkan" << endl;
+		if (!ball /*&& kondisi == 0*/) {}
+		else if (ball) {
+			if (pidOmniView.rawOutput < 0 && locBola[0] > 310 && ball) kondisi = -2;
+			else if (pidOmniView.rawOutput > 0 && locBola[0] < 190 && ball) kondisi = 2;
+			else if (pidOmniView.rawOutput < 0 && locBola[0] > 260 && locBola[0] < 310 && ball) kondisi = 1;
+			else if (pidOmniView.rawOutput > 0 && locBola[0] > 190 && locBola[0] < 260 && ball) kondisi = -1;
+		}
+		int _rows = 60;
+		cv::line(_ori2, cv::Point(0, _ori2.rows - _rows), cv::Point(_ori2.cols, _ori2.rows - _rows), cv::Scalar(255, 255, 255), 1);
 	}
-	int _rows = 60;
-	cv::line(_ori2, cv::Point(0, _ori2.rows - _rows), cv::Point(_ori2.cols, _ori2.rows - _rows), cv::Scalar(255, 255, 255), 1);
+	else if (kondisiKamera == 2) {
+		//cout << "Kamera depan AKtifkan" << endl;
+		
+		if (!ball) {
+
+		}
+		else {
+			if (pidRotation.rawOutput < 0) kondisi = 1;
+			else if (pidRotation.rawOutput > 0) kondisi = -1;
+		}
+	}
 	if (dataHeading < pidArahGawang.setPoint && centerBall[0].x > 480 && centerBall[0].x < 500 && centerBall[0].y > 245 && centerBall[0].y < 275) kondisi = -3;
 	else if ( dataHeading > pidArahGawang.setPoint && centerBall[0].x > 480 && centerBall[0].x < 500 && centerBall[0].y > 245 && centerBall[0].y < 275) kondisi = 3;
+	
 	
 }
 
@@ -355,6 +395,7 @@ void cameraAtas() {
 	//processFindContour(processThreshold(_ori, inisiateScalarLowObstacle(), inisiateScalarHighObstacle()), 4);
 
 	cv::line(_ori, cv::Point(_ori.cols / 2, _ori.rows / 2), cv::Point(_ori.cols, _ori.rows/2), cv::Scalar(255, 0, 0), 2);
+	kejarBola(1);
 }
 
 void cameraDepan() {
@@ -367,6 +408,7 @@ void cameraDepan() {
 	//cv::bitwise_not(processThreshold(_ori2, inisiateScalarLowGaris(), inisiateScalarHighGaris()), destImg);
 	//processFindContour(destImg, 5);
 	//cout << centerBall[1];
+	kejarBola(2);
 }
 
 
